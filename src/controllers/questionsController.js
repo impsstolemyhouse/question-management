@@ -5,7 +5,6 @@ const prisma = new PrismaClient({
   // log: ["query"],
 });
 
-// Define a custom storage engine for multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads");
@@ -44,7 +43,6 @@ exports.createQuestion = async (req, res) => {
       jsonData;
 
     try {
-      // Prepare URLs for uploaded files
       const problemImageUrl = req.files["Problem-Image"]
         ? `/uploads/${req.files["Problem-Image"][0].filename}`
         : null;
@@ -55,7 +53,6 @@ exports.createQuestion = async (req, res) => {
           : null;
       });
 
-      // Create the question with associated data
       const createdQuestion = await prisma.question.create({
         data: {
           question: Question,
@@ -73,10 +70,12 @@ exports.createQuestion = async (req, res) => {
             })),
           },
           tags: {
-            connectOrCreate: Tags.map((tag) => ({
-              where: { name: tag },
-              create: { name: tag },
-            })),
+            connectOrCreate: Tags
+              ? Tags.map((tag) => ({
+                  where: { name: tag },
+                  create: { name: tag },
+                }))
+              : [],
           },
         },
         include: {
@@ -119,7 +118,6 @@ exports.getQuestions = async (req, res) => {
       },
     });
 
-    // Map each question to the frontend format
     const responseData = questions.map((question) => ({
       Id: question.id,
       Question: question.question,
@@ -143,15 +141,15 @@ exports.getQuestions = async (req, res) => {
 };
 
 exports.getQuestion = async (req, res) => {
-  const { id } = req.params; // Get the question ID from the request parameters
+  const { id } = req.params;
 
   try {
     const question = await prisma.question.findUnique({
-      where: { id: parseInt(id, 10) }, // Use the id from the request parameters
+      where: { id: parseInt(id, 10) },
       include: {
         options: true,
         steps: true,
-        tags: true, // If you also want to include tags with the question
+        tags: true,
       },
     });
 
@@ -193,10 +191,9 @@ exports.updateQuestion = async (req, res) => {
       return res.status(500).json({ error: "File upload failed" });
     }
 
-    // Parse the jsonData field if it's in form-data
     let jsonData;
     try {
-      jsonData = JSON.parse(req.body.jsonData); // Ensure it's a valid JSON string
+      jsonData = JSON.parse(req.body.jsonData);
     } catch (error) {
       return res.status(400).json({ error: "Invalid JSON data" });
     }
@@ -205,7 +202,6 @@ exports.updateQuestion = async (req, res) => {
       jsonData;
 
     try {
-      // Prepare URLs for uploaded files (if any)
       const problemImageUrl = req.files["Problem-Image"]
         ? `/uploads/${req.files["Problem-Image"][0].filename}`
         : null;
@@ -216,7 +212,6 @@ exports.updateQuestion = async (req, res) => {
           : null;
       });
 
-      // Fetch the current tags associated with the question
       const currentTags = await prisma.question.findUnique({
         where: { id },
         select: {
@@ -226,7 +221,6 @@ exports.updateQuestion = async (req, res) => {
         },
       });
 
-      // Find which tags to disconnect (i.e., tags that are in the database but not in the updated list)
       const tagsToDisconnect = currentTags.tags.filter(
         (tag) => !Tags.includes(tag.name)
       );
@@ -234,32 +228,29 @@ exports.updateQuestion = async (req, res) => {
         (tag) => !currentTags.tags.some((t) => t.name === tag)
       );
 
-      // Update the question with associated data
       const updatedQuestion = await prisma.question.update({
         where: { id },
         data: {
           question: Question,
           solution: Solution,
           correctAnswer: CorrectAnswer,
-          imageUrl: problemImageUrl || undefined, // Use existing image if no new one is uploaded
+          imageUrl: problemImageUrl || undefined,
           options: {
-            deleteMany: {}, // Delete existing options first
+            deleteMany: {},
             create: Options.map((option) => ({
               value: option,
             })),
           },
           steps: {
-            deleteMany: {}, // Delete existing steps first
+            deleteMany: {},
             create: Steps.map((step, index) => ({
               title: step.Title,
               result: step.Result,
-              imageUrl: stepImages[index] || null, // Update the step image URL if uploaded
+              imageUrl: stepImages[index] || null,
             })),
           },
           tags: {
-            // Disconnect the tags that are no longer part of the question
             disconnect: tagsToDisconnect.map((tag) => ({ name: tag.name })),
-            // Connect new tags
             connectOrCreate: tagsToConnect.map((tag) => ({
               where: { name: tag },
               create: { name: tag },
@@ -273,7 +264,6 @@ exports.updateQuestion = async (req, res) => {
         },
       });
 
-      // Return updated question data
       res.json({
         Id: updatedQuestion.id,
         Question: updatedQuestion.question,
@@ -300,7 +290,6 @@ exports.updateQuestion = async (req, res) => {
 exports.deleteQuestion = async (req, res) => {
   const { id } = req.params;
   try {
-    // Delete the question and cascade delete related data
     await prisma.question.delete({
       where: { id: parseInt(id) },
     });
