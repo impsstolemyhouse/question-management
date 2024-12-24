@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const multer = require("multer");
-const path = require("path");
+const http = require("http");
 
 const routes = require("./routes");
 
@@ -21,7 +20,36 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal Server Error" });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+function tryListenOnPort(port) {
+  return new Promise((resolve, reject) => {
+    const server = http.createServer(app);
+
+    server.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+      resolve();
+    });
+
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        reject();
+      } else {
+        reject(err);
+      }
+    });
+  });
+}
+
+const preferredPort = process.env.PORT || 3000;
+
+tryListenOnPort(preferredPort)
+  .catch(() => {
+    console.log(
+      `Port ${preferredPort} is in use. Trying port ${
+        Number(preferredPort) + 1
+      }...`
+    );
+    return tryListenOnPort(Number(preferredPort) + 1);
+  })
+  .catch((err) => {
+    console.error("Error starting the server:", err);
+  });
