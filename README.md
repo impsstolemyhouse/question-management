@@ -1,34 +1,19 @@
 # Question Management System
 
-A web application for managing questions, solutions, titles, and results, built using **Node.js**, **Express.js**, **Prisma.io**, **PostgreSQL**, and **Docker**. This app allows for easy management of quiz data and supports **Unity Rich Text Tags** for enhanced text formatting in specific fields.
-
-## Features
-
-- **CRUD Operations**: Create, Read, Update, and Delete questions, solutions, titles, and results.
-- **PostgreSQL Integration**: Uses PostgreSQL to store and manage question data.
-- **Unity Rich Text Tags**: Supports Unity Rich Text formatting for the fields `Question`, `Solution`, `Title`, and `Result`.
-- **Docker Support (Optional)**: The application can be containerized using Docker for simplified deployment.
-
-## Technologies Used
-
-- **Node.js**: JavaScript runtime environment for the backend.
-- **Express.js**: Web framework to build the REST API.
-- **Prisma.io**: ORM used to interact with PostgreSQL.
-- **PostgreSQL**: Relational database to store question data.
-- **Docker**: Platform to containerize and run the application in isolated environments.
+This backend manages quiz questions with rich text, multiple-choice answers, and explanations, built with Node.js, Express.js, Prisma.io, PostgreSQL, and Docker. It supports CRUD operations and generates Unity-compatible JSON output with embedded images for enhanced formatting.
 
 ## Installation and Setup
 
 ### Step 1: Clone the repository
 
-If you don't have Git installed, first install it using the following commands:
+If you don't have Git installed, run:
 
 ```bash
 sudo apt update
 sudo apt install git
 ```
 
-Then, clone the project repository:
+Then, clone the repository:
 
 ```bash
 git clone https://github.com/impsstolemyhouse/question-management.git
@@ -77,7 +62,7 @@ sudo -u postgres psql
 Run the following SQL command to set the password:
 
 ```sql
-ALTER USER postgres WITH PASSWORD 'your_new_password';
+ALTER USER postgres WITH PASSWORD 'your_password';
 ```
 
 Exit the PostgreSQL shell:
@@ -116,7 +101,7 @@ or finds an available port, starting from the preferred port (default: 3000), in
 
 ## API Endpoints
 
-### POST http://localhost:3000/api/questions/:id
+### POST http://localhost:3000/api/questions
 
 Create a new question in the system.
 
@@ -142,7 +127,7 @@ Request Body Example:
 }
 ```
 
-**You must send the JSON data under the name "jsonData" and the images as "Problem-Image," "Step-1-Image," "Step-2-Image," and so on.**
+You must send the JSON data under the name "jsonData" and the images as "Problem-Image," "Step-1-Image," "Step-2-Image," and so on.
 
 Response Example:
 
@@ -169,10 +154,6 @@ Response Example:
   "Tags": ["Geography", "Capitals"]
 }
 ```
-
-**You can use images with URLs like http://localhost:3000/ImageUrl.**
-
-**For example, http://localhost:3000/uploads/1735130917702-986166840.png.**
 
 ### GET http://localhost:3000/api/questions
 
@@ -294,8 +275,28 @@ Delete a question by its ID.
 
 Response Example:
 
-```json
+```
 {
   "message": "Question deleted successfully"
 }
 ```
+
+# Important Notes
+
+- **Correct Port**: When accessing the API endpoints, make sure to use the correct port. By default, the application will try to start on port 3000. However, if this port is already in use, the server will automatically find the next available port. Be sure to use the correct port number when making requests to the API.
+
+  For example, if the server starts on port 3001, your API endpoint will be accessible at:
+
+  ```
+  http://localhost:3001/api/questions
+  ```
+
+- **Using Images:** You can use images with URLs like http://localhost:3000/ImageUrl. These URLs will point to the images hosted by the server.
+
+  For example:
+
+  ```
+  http://localhost:3000/uploads/1735130917702-986166840.png
+  ```
+
+- **Sending Data**: You must send the JSON data under the name "jsonData" and the images as "Problem-Image," "Step-1-Image," "Step-2-Image," and so on.
