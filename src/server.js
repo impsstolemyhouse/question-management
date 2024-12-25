@@ -26,12 +26,12 @@ function tryListenOnPort(port) {
 
     server.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
-      resolve();
+      resolve(port);
     });
 
     server.on("error", (err) => {
       if (err.code === "EADDRINUSE") {
-        reject();
+        reject("EADDRINUSE");
       } else {
         reject(err);
       }
@@ -39,17 +39,26 @@ function tryListenOnPort(port) {
   });
 }
 
-const preferredPort = process.env.PORT || 3000;
+async function findAvailablePort(startingPort) {
+  let port = startingPort;
+  while (true) {
+    try {
+      await tryListenOnPort(port);
+      return port; // Successfully started the server
+    } catch (err) {
+      if (err === "EADDRINUSE") {
+        console.log(`Port ${port} is in use. Trying port ${port + 1}...`);
+        port++;
+      } else {
+        console.error("Error starting the server:", err);
+        process.exit(1); // Exit the process for other errors
+      }
+    }
+  }
+}
 
-tryListenOnPort(preferredPort)
-  .catch(() => {
-    console.log(
-      `Port ${preferredPort} is in use. Trying port ${
-        Number(preferredPort) + 1
-      }...`
-    );
-    return tryListenOnPort(Number(preferredPort) + 1);
-  })
-  .catch((err) => {
-    console.error("Error starting the server:", err);
-  });
+const preferredPort = parseInt(process.env.PORT, 10) || 3000;
+
+findAvailablePort(preferredPort).then((port) => {
+  console.log(`Server successfully started on http://localhost:${port}`);
+});
